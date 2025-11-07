@@ -46,8 +46,3 @@ jobs:
         python ./upload.py
       env:
         R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-    - name: Upload metadata as artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: metadata
-        path: resources/metadata.json
