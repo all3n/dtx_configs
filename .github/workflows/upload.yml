@@ -3,8 +3,8 @@ name: Upload Files to S3
 on:
   push:
     tags:
-      - 'v*'  # 在打tag时触发
-  workflow_dispatch:  # 允许手动触发
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   upload:
@@ -14,19 +14,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup AWS CLI
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: auto  # R2 需要设置 region 为 auto
-
+    - name: Check AWS CLI version
+      run: aws --version
+      
+    - name: Configure AWS CLI for R2
+      run: |
+        # 手动配置 AWS CLI 用于 R2
+        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile r2
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile r2
+        aws configure set region us-east-1 --profile r2
+        
     - name: Make script executable
       run: chmod +x resources/upload.sh
-
+      
     - name: Run upload script
       run: ./resources/upload.sh
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_ENDPOINT_URL: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+        R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}

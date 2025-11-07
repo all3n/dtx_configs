@@ -5,6 +5,13 @@ BUCKET="s3://dev/qxdata/dtx"
 PROFILE="r2"
 METADATA_FILE="metadata.json"
 
+
+R2_ENDPOINT_URL=""
+if [[ -n "$R2_ACCOUNT_ID" ]];then
+    R2_ACCOUNT_ID="${R2_ACCOUNT_ID}"
+    R2_ENDPOINT_URL="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+fi
+
 # 开始JSON数组
 echo "[" > "$METADATA_FILE"
 
@@ -24,7 +31,11 @@ for file in *.cfg; do
     file_md5=$(md5sum "$file" |awk '{print $1}')
     
     # 上传文件到S3
-    aws --profile="$PROFILE" s3 cp "$file" "$BUCKET/$file"
+    if [[ -n "$R2_ACCOUNT_ID" ]];then
+        aws --endpoint=$R2_ENDPOINT_URL --profile="$PROFILE" s3 cp "$file" "$BUCKET/$file"
+    else
+        aws --profile="$PROFILE" s3 cp "$file" "$BUCKET/$file"
+    fi
     
     if [ $? -eq 0 ]; then
         echo "✓ 上传成功: $file"
