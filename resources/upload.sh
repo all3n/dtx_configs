@@ -4,6 +4,7 @@
 BUCKET="s3://dev/qxdata/dtx"
 PROFILE="r2"
 METADATA_FILE="metadata.json"
+export TZ="Asia/Shanghai"
 
 
 R2_ENDPOINT_URL=""
@@ -51,7 +52,7 @@ for file in *.cfg; do
         if [ $count -eq 1 ]; then
             echo "  {" >> "$METADATA_FILE"
         else
-            echo "  ,{" >> "$METADATA_FILE"
+            echo "  ,\n  {" >> "$METADATA_FILE"
         fi
         
         cat >> "$METADATA_FILE" << EOF
@@ -59,7 +60,7 @@ for file in *.cfg; do
     "url": "$url",
     "sha256": "$file_hash",
     "md5": "$file_md5",
-    "upload_time": "$(date -Iseconds)"
+    "upload_time": "$(date +%F_%T)"
   }
 EOF
         
