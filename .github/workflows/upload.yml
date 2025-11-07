@@ -47,9 +47,6 @@ jobs:
         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile r2
         aws configure set region us-east-1 --profile r2
         
-    - name: Make script executable
-      run: chmod +x resources/upload.sh
-      
     - name: Run upload script
       run: |
         cd ./resources
