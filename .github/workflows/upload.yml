@@ -2,6 +2,9 @@ name: Upload Files to S3
 
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
       - 'v*'
   workflow_dispatch:
