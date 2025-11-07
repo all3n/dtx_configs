@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+import os
+import json
+import hashlib
+import subprocess
+from datetime import datetime
+import glob
+
+def calculate_file_hash(file_path, hash_type='sha256'):
+    """计算文件hash"""
+    hash_func = getattr(hashlib, hash_type)()
+    with open(file_path, 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_func.update(chunk)
+    return hash_func.hexdigest()
+
+def upload_to_s3(local_file, target_file, profile='r2', bucket='s3://dev/qxdata/dtx'):
+    """上传文件到S3/R2"""
+    r2_account_id = os.environ.get('R2_ACCOUNT_ID', '')
+
+    cmd = ['aws']
+
+    # 如果配置了R2账户ID，添加endpoint参数
+    if r2_account_id:
+        endpoint_url = f"https://{r2_account_id}.r2.cloudflarestorage.com"
+        cmd.extend(['--endpoint', endpoint_url])
+
+    cmd.extend([
+        '--profile', profile,
+        's3', 'cp', local_file, f"{bucket}/{target_file}"
+    ])
+
+    print(f"执行命令: {' '.join(cmd)}")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        print(f"✓ 上传成功: {local_file} -> {target_file}")
+        return True
+    else:
+        print(f"✗ 上传失败: {local_file}")
+        print(f"错误信息: {result.stderr}")
+        return False
+
+def main():
+    # 配置信息
+    BUCKET = "s3://dev/qxdata/dtx"
+    PROFILE = "r2"
+    METADATA_FILE = "metadata.json"
+    BASE_URL = "https://r2dev.all3n.top/qxdata/dtx"
+
+    # 设置时区
+    os.environ['TZ'] = 'Asia/Shanghai'
+
+    # 查找所有.cfg文件
+    cfg_files = glob.glob("*.cfg")
+    total_files = len(cfg_files)
+
+    if total_files == 0:
+        print("未找到任何.cfg文件")
+        return
+
+    metadata = []
+
+    print(f"开始上传 {total_files} 个 .cfg 文件...")
+
+    for count, file in enumerate(cfg_files, 1):
+        print(f"正在处理 ({count}/{total_files}): {file}")
+
+        try:
+            # 计算文件hash
+            file_sha256 = calculate_file_hash(file, 'sha256')
+            file_md5 = calculate_file_hash(file, 'md5')
+
+            # 上传文件
+            if upload_to_s3(file, file):
+                # 构建文件信息
+                file_info = {
+                    "filename": file,
+                    "url": f"{BASE_URL}/{file}",
+                    "sha256": file_sha256,
+                    "md5": file_md5,
+                    "upload_time": datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+                }
+                metadata.append(file_info)
+                print(f"✓ 处理完成: {file}")
+            else:
+                print(f"✗ 处理失败: {file}")
+
+        except Exception as e:
+            print(f"✗ 处理文件时出错 {file}: {str(e)}")
+
+    # 保存metadata到文件
+    try:
+        with open(METADATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, indent=2, ensure_ascii=False)
+
+        print(f"✓ 元数据已保存到: {METADATA_FILE}")
+
+        # 上传metadata文件本身
+        if upload_to_s3(METADATA_FILE, METADATA_FILE):
+            print(f"✓ 元数据文件上传成功")
+        else:
+            print(f"✗ 元数据文件上传失败")
+
+    except Exception as e:
+        print(f"✗ 保存元数据时出错: {str(e)}")
+
+    print(f"\n完成! 已成功处理 {len(metadata)}/{total_files} 个文件")
+
+if __name__ == "__main__":
+    main()

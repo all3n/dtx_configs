@@ -20,6 +20,16 @@ jobs:
     - name: Check AWS CLI version
       run: aws --version
       
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install boto3
+
     - name: Configure AWS CLI for R2
       run: |
         # 手动配置 AWS CLI 用于 R2
@@ -33,6 +43,11 @@ jobs:
     - name: Run upload script
       run: |
         cd ./resources
-        bash ./upload.sh
+        python ./upload.py
       env:
         R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+    - name: Upload metadata as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: metadata
+        path: resources/metadata.json
