@@ -4,7 +4,9 @@ import json
 import hashlib
 import subprocess
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import glob
+shanghai_tz = ZoneInfo('Asia/Shanghai')
 
 def calculate_file_hash(file_path, hash_type='sha256'):
     """计算文件hash"""
@@ -79,7 +81,7 @@ def main():
                     "url": f"{BASE_URL}/{file}",
                     "sha256": file_sha256,
                     "md5": file_md5,
-                    "upload_time": datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+                    "upload_time": datetime.now(shanghai_tz).strftime("%Y-%m-%d_%H:%M:%S")
                 }
                 metadata.append(file_info)
                 print(f"✓ 处理完成: {file}")
