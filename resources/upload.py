@@ -61,7 +61,7 @@ def main():
         print("未找到任何.cfg文件")
         return
 
-    metadata = []
+    file_metas = []
 
     print(f"开始上传 {total_files} 个 .cfg 文件...")
 
@@ -80,10 +80,9 @@ def main():
                     "filename": file,
                     "url": f"{BASE_URL}/{file}",
                     "sha256": file_sha256,
-                    "md5": file_md5,
-                    "upload_time": datetime.now(shanghai_tz).strftime("%Y-%m-%d_%H:%M:%S")
+                    "md5": file_md5
                 }
-                metadata.append(file_info)
+                file_metas.append(file_info)
                 print(f"✓ 处理完成: {file}")
             else:
                 print(f"✗ 处理失败: {file}")
@@ -93,6 +92,10 @@ def main():
 
     # 保存metadata到文件
     try:
+        metadata = {
+            'data': file_metas,
+            "upload_time": datetime.now(shanghai_tz).strftime("%Y-%m-%d_%H:%M:%S")
+        }
         with open(METADATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
 
