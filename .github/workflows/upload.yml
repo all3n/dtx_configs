@@ -28,6 +28,8 @@ jobs:
       run: chmod +x resources/upload.sh
       
     - name: Run upload script
-      run: ./resources/upload.sh
+      run: |
+        cd ./resources
+        bash ./upload.sh
       env:
         R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
