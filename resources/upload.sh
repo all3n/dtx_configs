@@ -19,6 +19,15 @@ echo "[" > "$METADATA_FILE"
 count=0
 total_files=$(ls *.cfg | wc -l)
 
+upload_s3_file(){
+    local LOCAL_FILE=$1
+    local TARGET_FILE=$2
+    if [[ -n "$R2_ACCOUNT_ID" ]];then
+        aws --endpoint=$R2_ENDPOINT_URL --profile="$PROFILE" s3 cp "$LOCAL_FILE" "$BUCKET/$TARGET_FILE"
+    else
+        aws --profile="$PROFILE" s3 cp "$LOCAL_FILE" "$BUCKET/$TARGET_FILE"
+    fi
+}
 echo "开始上传 .cfg 文件..."
 
 # 遍历所有.cfg文件
@@ -30,12 +39,7 @@ for file in *.cfg; do
     file_hash=$(sha256sum "$file" | awk '{print $1}')
     file_md5=$(md5sum "$file" |awk '{print $1}')
     
-    # 上传文件到S3
-    if [[ -n "$R2_ACCOUNT_ID" ]];then
-        aws --endpoint=$R2_ENDPOINT_URL --profile="$PROFILE" s3 cp "$file" "$BUCKET/$file"
-    else
-        aws --profile="$PROFILE" s3 cp "$file" "$BUCKET/$file"
-    fi
+    upload_s3_file $file $file
     
     if [ $? -eq 0 ]; then
         echo "✓ 上传成功: $file"
@@ -71,4 +75,4 @@ echo ""
 echo "完成! 已上传 $count 个文件"
 echo "元数据已保存到: $METADATA_FILE"
 METADATA_FILENAME=$(basename $METADATA_FILE)
-aws --profile="$PROFILE" s3 cp "$METADATA_FILE" "$BUCKET/$METADATA_FILENAME"
+upload_s3_file $METADATA_FILE $METADATA_FILENAME
